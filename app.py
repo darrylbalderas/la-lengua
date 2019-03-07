@@ -1,9 +1,25 @@
 import requests
+from config import Config as conf
 
-token = ''
 
-headers = {'Accept': 'application/json', 'Authorization': 'Bearer ' + token}
+def format_query(query):
+    """Replaces spaces for %20"""
+    return '%20'.join(query.split())
 
-response = requests.get('https://api.genius.com/search?q=bad%20bunny', headers=headers)
 
-data = response.json()
+def perform_response(url):
+    """Perform HTTP GET REQUEST"""
+    headers = {'Accept': 'application/json', 'Authorization': 'Bearer ' + conf.ACCESS_TOKEN}
+    return requests.get(url, headers=headers)
+
+
+def get_artist_id(query):
+    """Extract Artist Id from search results for a particular artist"""
+    url = '{}search?q={}'.format(format_query(conf.BASE_URL, query))
+    response = perform_response(url)
+    return response.json()
+
+
+ids = [get_artist_id(artist_name) for artist_name in conf.ARTIST_TO_SEARCH]
+
+
