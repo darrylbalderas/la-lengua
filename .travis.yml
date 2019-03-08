@@ -1,8 +1,8 @@
 language: python
 python:
   - '3.6'
-install: pip install -r requirements-dev.txt
+install: pip install -r requirements.txt
 before_script:
-  - black api/
+  - black -l 79 api/
   - flake8 api/
 script: pytest api/
