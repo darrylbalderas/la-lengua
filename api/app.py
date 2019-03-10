@@ -1,5 +1,6 @@
 import requests
 import re
+import pandas as pd
 
 
 class Config:
@@ -61,7 +62,10 @@ def get_artist_id(query):
 
 
 def check_status_code(response):
-    if response["meta"]["status"] not in (202, 200):
+    try:
+        if response["meta"]["status"] not in (202, 200):
+            raise RuntimeError("Invalid access token")
+    except KeyError:
         raise RuntimeError("Invalid access token")
 
 
@@ -83,8 +87,7 @@ def get_songs_detail(song):
     artist_name = song["primary_artist"]["name"].lower()
     song_url = song["url"]
     title = remove_break_characters(song["full_title"])
-    values = (artist_name, song_url, title)
-    return values
+    return [artist_name, song_url, title]
 
 
 def remove_break_characters(sentence):
@@ -92,12 +95,17 @@ def remove_break_characters(sentence):
 
 
 def main():
+    contents = []
     for index, artist_name in enumerate(Config.ARTIST_TO_SEARCH):
         artist_id = get_artist_id(artist_name)
         artist_to_search = Config.ARTIST_TO_SEARCH[index].lower()
         for song in get_artist_songs(artist_id):
             if song[0] == artist_to_search:
-                print(song)
+                contents.append(song)
+    dataframe = pd.DataFrame(
+        contents, columns=["artist", "lyric_url", "title"]
+    )
+    dataframe.to_csv("lyrics_urls.csv", sep="\t")
 
 
 if __name__ == "__main__":

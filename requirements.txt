@@ -2,3 +2,5 @@ pytest==4.3.0
 requests==2.21.0
 black==18.9b0
 flake8==3.7.7
+pandas==0.24.1
+numpy==1.16.2
