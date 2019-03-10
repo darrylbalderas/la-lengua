@@ -1,9 +1,16 @@
 import requests
+import re
 
 
 class Config:
     ACCESS_TOKEN = ""
-    ARTIST_TO_SEARCH = ["bad bunny", "yg", "nipsey hussle"]
+    ARTIST_TO_SEARCH = [
+        "yg",
+        "nipsey hussle",
+        "kendrick lamar",
+        "snoop dogg",
+        "2pac",
+    ]
     BASE_URL = "https://api.genius.com/"
 
 
@@ -40,21 +47,57 @@ def possible_artist_id(primary_artists):
 
 def get_artist_id(query):
     """Extract artist id from search results for a particular artist"""
-    url = "{}search?q={}&offset=10&limit=5".format(
-        Config.BASE_URL, format_query(query)
-    )
+    url = "{}search?q={}".format(Config.BASE_URL, format_query(query))
     response = perform_response(url).json()
-    primary_artists = [
-        hit["result"]["primary_artist"] for hit in response["response"]["hits"]
-    ]
+    check_status_code(response)
+    try:
+        primary_artists = [
+            hit["result"]["primary_artist"]
+            for hit in response["response"]["hits"]
+        ]
+    except KeyError:
+        raise Exception("Not able to find {}".format(query))
     return possible_artist_id(primary_artists)
 
 
+def check_status_code(response):
+    if response["meta"]["status"] not in (202, 200):
+        raise RuntimeError("Invalid access token")
+
+
+def get_artist_songs(artist_id):
+    url = "{}artists/{}/songs".format(Config.BASE_URL, artist_id)
+    response = perform_response(url).json()
+    check_status_code(response)
+    try:
+        songs = [
+            get_songs_detail(song)
+            for song in response["response"]["songs"]
+        ]
+    except KeyError:
+        raise Exception("No songs exists for {}".format(artist_id))
+    return songs
+
+
+def get_songs_detail(song):
+    artist_name = song["primary_artist"]["name"].lower()
+    song_url = song["url"]
+    title = remove_break_characters(song["full_title"])
+    values = (artist_name, song_url, title)
+    return values
+
+
+def remove_break_characters(sentence):
+    return re.sub(r"\xa0", " ", sentence)
+
+
 def main():
-    ids = [
-        get_artist_id(artist_name) for artist_name in Config.ARTIST_TO_SEARCH
-    ]
-    print(ids)
+    for index, artist_name in enumerate(Config.ARTIST_TO_SEARCH):
+        artist_id = get_artist_id(artist_name)
+        artist_to_search = Config.ARTIST_TO_SEARCH[index].lower()
+        for song in get_artist_songs(artist_id):
+            if song[0] == artist_to_search:
+                print(song)
 
 
 if __name__ == "__main__":
