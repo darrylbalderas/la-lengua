@@ -100,8 +100,9 @@ def main():
         artist_id = get_artist_id(artist_name)
         artist_to_search = Config.ARTIST_TO_SEARCH[index].lower()
         for song in get_artist_songs(artist_id):
-            if song[0] == artist_to_search:
-                contents.append(song)
+            if song[0] != artist_to_search:
+                continue
+            contents.append(song)
     dataframe = pd.DataFrame(
         contents, columns=["artist", "lyric_url", "title"]
     )
